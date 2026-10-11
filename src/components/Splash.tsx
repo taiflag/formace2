@@ -18,7 +18,7 @@ function Splash({ backgroundSrc, logoSrc }: SplashProps) {
     const fadeOut = setTimeout(() => setVisivel(false), 1800);
 
     // navega depois que o fade out terminou
-    const trocaTela = setTimeout(() => navigate("/dashboard"), 2300);
+    const trocaTela = setTimeout(() => navigate("/login"), 2300);
 
     return () => {
       clearTimeout(fadeIn);

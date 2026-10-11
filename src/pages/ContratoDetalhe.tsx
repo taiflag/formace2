@@ -1,9 +1,17 @@
 import { useParams, Link } from "react-router-dom";
 import { contratosMock } from "../mocks/contratosMock";
 import Button from "../components/Button";
+import ContratoPDF from "../components/ContratoPDF";
+import { buscarContrato } from "../store/contratosStore";
 
 function ContratoDetalhe() {
   const { id } = useParams();
+
+  // contratos criados pelo "+ Novo contrato PDF"
+  const criado = buscarContrato(id);
+  if (criado) return <ContratoPDF contrato={criado} />;
+
+  // contratos de exemplo (mock), como já era
   const contrato = contratosMock.find((c) => c.id === id);
 
   if (!contrato) {

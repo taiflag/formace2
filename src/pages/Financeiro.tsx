@@ -484,22 +484,18 @@ function AbaMovimento({
   const [erros, setErros] = useState<Record<string, string>>({});
 
   // livro do dia a dia, em ordem de data, com o saldo depois de cada lançamento
-  return ordenados.reduce(
-    (acumulados, m) => {
-      const saldoAnterior =
-        acumulados.length > 0
-          ? acumulados[acumulados.length - 1].saldo
-          : saldoInicial;
+  const linhas = useMemo(() => {
+    const ordenados = movimentos
+      .filter((m) => m.conta === conta)
+      .slice()
+      .sort((a, b) => (a.data < b.data ? -1 : a.data > b.data ? 1 : 0));
 
-      const novoSaldo = saldoAnterior + sinal(m);
-
-      acumulados.push({ ...m, saldo: novoSaldo });
-
-      return acumulados;
-    },
-    [] as Array<(typeof ordenados)[number] & { saldo: number }>,
-  );
-
+    return ordenados.reduce<(Movimento & { saldo: number })[]>((acc, m) => {
+      const anterior = acc.length ? acc[acc.length - 1].saldo : saldoInicial;
+      acc.push({ ...m, saldo: anterior + sinal(m) });
+      return acc;
+    }, []);
+  }, [movimentos, conta, saldoInicial]);
   const meses = Array.from(new Set(linhas.map((l) => mesDe(l.data))));
   const visiveis = mes ? linhas.filter((l) => mesDe(l.data) === mes) : linhas;
 

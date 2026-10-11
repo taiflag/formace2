@@ -1,8 +1,46 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import Button from "../components/Button";
+import NovoContrato from "../components/NovoContrato";
+import type { ContratoCriado } from "../components/NovoContrato";
 import { contratosMock } from "../mocks/contratosMock";
+import {
+  adicionarContrato,
+  useContratosCriados,
+} from "../store/contratosStore";
+
+const cardStyle = {
+  textDecoration: "none",
+  display: "block",
+  width: 170,
+  padding: "18px 12px",
+  textAlign: "center" as const,
+  background: "#fff",
+  border: "1px solid #ecebf7",
+  borderRadius: 10,
+  boxShadow: "0 2px 8px rgba(108, 92, 231, 0.12)",
+};
 
 function Contratos() {
+  const criados = useContratosCriados();
+  const [criando, setCriando] = useState(false);
+
+  const concluir = (c: ContratoCriado) => {
+    // Semana 4: trocar por um POST com Axios (contrato + PDF) e usar a resposta.
+    adicionarContrato(c);
+    setCriando(false);
+  };
+
+  // criados primeiro, depois os do mock; todos abrem em /contratos/:id
+  const todos = [
+    ...criados.map((c) => ({
+      id: c.id,
+      locatario: c.locatario,
+      vence: c.vence,
+    })),
+    ...contratosMock,
+  ];
+
   return (
     <main style={{ padding: "28px 36px", fontFamily: "'Nunito', sans-serif" }}>
       <div
@@ -21,26 +59,14 @@ function Contratos() {
             Documentos digitalizados, sem arquivamento físico
           </p>
         </div>
-        <Button variant="primary">+ Novo contrato PDF</Button>
+        <Button variant="primary" onClick={() => setCriando(true)}>
+          + Novo contrato PDF
+        </Button>
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
-        {contratosMock.map((c) => (
-          <Link
-            key={c.id}
-            to={`/contratos/${c.id}`}
-            style={{
-              textDecoration: "none",
-              display: "block",
-              width: 170,
-              padding: "18px 12px",
-              textAlign: "center",
-              background: "#fff",
-              border: "1px solid #ecebf7",
-              borderRadius: 10,
-              boxShadow: "0 2px 8px rgba(108, 92, 231, 0.12)",
-            }}
-          >
+        {todos.map((c) => (
+          <Link key={c.id} to={`/contratos/${c.id}`} style={cardStyle}>
             <div
               style={{
                 width: 36,
@@ -64,6 +90,10 @@ function Contratos() {
           </Link>
         ))}
       </div>
+
+      {criando && (
+        <NovoContrato onClose={() => setCriando(false)} onConcluir={concluir} />
+      )}
     </main>
   );
 }
