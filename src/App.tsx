@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import Splash from "./components/Splash";
 import Layout from "./components/layout";
 import Login from "./pages/Login";
+import Cadastro from "./pages/Cadastro";
 import Dashboard from "./pages/Dashboard";
 import Imoveis from "./pages/Imoveis";
 import Financeiro from "./pages/Financeiro";
@@ -19,6 +20,7 @@ function App() {
         element={<Splash backgroundSrc={fundo} logoSrc={logo} />}
       />
       <Route path="/login" element={<Login />} />
+      <Route path="/cadastro" element={<Cadastro />} />
       <Route element={<Layout />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/imoveis" element={<Imoveis />} />
