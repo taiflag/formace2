@@ -8,8 +8,8 @@ export type ContratoCriado = {
   id: string;
   imovel: string;
   locatario: string;
-  vence: string; // MM/AAAA, fim do contrato (igual ao campo do seu mock)
-  html: string; // contrato completo já assinado (pra abrir de novo / imprimir)
+  vence: string; // MM/AAAA, fim do contrato
+  html: string; // contrato completo (pra abrir de novo / imprimir)
   enviadoPara: string[];
 };
 
@@ -37,13 +37,6 @@ type Dados = {
   conjuge: string; // opcional
   rgConjuge: string;
   cpfConjuge: string;
-};
-
-type Assinaturas = {
-  locatario: string;
-  fiador: string;
-  conjuge: string;
-  fundacao: string;
 };
 
 type Props = {
@@ -112,7 +105,7 @@ const dataExtenso = (iso: string) =>
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-/* Números por extenso (o contrato escreve "750,00 (setecentos e cinquenta reais)") */
+/* Números por extenso */
 const U = [
   "zero",
   "um",
@@ -195,11 +188,10 @@ const brlSimples = (v: number) =>
     maximumFractionDigits: 2,
   });
 
-/* ───────── O contrato em HTML (vira o PDF) ─────────
-   Texto copiado do contrato oficial da Fundação (Casa 159 – MG). */
+/* ───────── O contrato em HTML (vira o PDF) ───────── */
 
 // eslint-disable-next-line react-refresh/only-export-components
-export function contratoHTML(d: Dados, a: Assinaturas): string {
+export function contratoHTML(d: Dados): string {
   const valor = numero(d.aluguel);
   const prazo = Number(d.prazoMeses) || 0;
   const dia = Number(d.diaVencimento) || 0;
@@ -221,9 +213,9 @@ export function contratoHTML(d: Dados, a: Assinaturas): string {
   ) =>
     `${esc(nome)}, ${qual(q)}, portador(a) de documento de identificação ${esc(rg)} e CPF ${esc(cpf)}, residente e domiciliado(a) em ${esc(end)}`;
 
-  const assin = (img: string, titulo: string, nome: string, cpf?: string) => `
+  const assin = (titulo: string, nome: string, cpf?: string) => `
     <div class="ass">
-      <div class="linha">${img ? `<img src="${img}" />` : ""}</div>
+      <div class="linha"></div>
       <div class="papel">${titulo}</div>
       <div><b>${esc(nome)}</b></div>
       ${cpf ? `<div class="papel">CPF ${esc(cpf)}</div>` : ""}
@@ -240,11 +232,9 @@ export function contratoHTML(d: Dados, a: Assinaturas): string {
   .topo b { font-size: 13px; }
   h1 { font-size: 15px; text-align: center; margin: 0 0 16px; }
   p { margin: 0 0 9px; text-align: justify; text-indent: 24px; }
-  p.sem { text-indent: 0; }
   .ass-box { display: grid; grid-template-columns: 1fr 1fr; gap: 28px 30px; margin-top: 34px; page-break-inside: avoid; }
   .ass { text-align: center; }
   .linha { height: 56px; border-bottom: 1px solid #1a1a2e; display: flex; align-items: flex-end; justify-content: center; }
-  .linha img { max-height: 52px; max-width: 100%; }
   .papel { color: #555; font-size: 10.5px; margin-top: 2px; }
   .data { text-align: center; margin: 22px 0 0; text-indent: 0; }
 </style></head><body>
@@ -295,7 +285,7 @@ export function contratoHTML(d: Dados, a: Assinaturas): string {
 
 <p><b>Décima Primeira: CITAÇÃO - INTIMAÇÃO - NOTIFICAÇÃO</b> - Fica autorizado pelas partes contratantes que havendo necessidade de citação, intimação ou notificação, far-se-á, mediante correspondência com aviso de recebimento.</p>
 
-<p><b>Décima Segunda: FUNDAMENTO LEGAL</b> - O presente Contrato é celebrado e regido pela Lei n.º 8.245/91, que regula a Locação de Imóvel Urbano e demais legislação pertinente.</p>
+<p><b>Décima Segunda: FUNDAMENTO LEGAL</b> - O presente Contrato is celebrado e regido pela Lei n.º 8.245/91, que regula a Locação de Imóvel Urbano e demais legislação pertinente.</p>
 
 <p><b>Décima Terceira: FORO</b> - Para dirimir qualquer questão oriunda do presente Contrato, fica eleito o Foro da Comarca de Aracaju.</p>
 
@@ -304,17 +294,17 @@ export function contratoHTML(d: Dados, a: Assinaturas): string {
 <p class="data">Aracaju/SE, ${hoje}.</p>
 
 <div class="ass-box">
-  ${assin(a.fundacao, "LOCADORA:", FUNDACAO.nome)}
-  ${assin(a.locatario, "LOCATÁRIO(A):", d.locatario, d.cpfLocatario)}
-  ${assin(a.fiador, "FIADOR(A):", d.fiador, d.cpfFiador)}
-  ${temConjuge ? assin(a.conjuge, "CÔNJUGE DO FIADOR:", d.conjuge, d.cpfConjuge) : "<div></div>"}
+  ${assin("LOCADORA:", FUNDACAO.nome)}
+  ${assin("LOCATÁRIO(A):", d.locatario, d.cpfLocatario)}
+  ${assin("FIADOR(A):", d.fiador, d.cpfFiador)}
+  ${temConjuge ? assin("CÔNJUGE DO FIADOR:", d.conjuge, d.cpfConjuge) : "<div></div>"}
   ${testemunha}
   ${testemunha}
 </div>
 </body></html>`;
 }
 
-/* Abre a janela de impressão do navegador (ali ela escolhe "Salvar como PDF") */
+/* Abre a janela de impressão do navegador */
 // eslint-disable-next-line react-refresh/only-export-components
 export function imprimirContrato(html: string) {
   const f = document.createElement("iframe");
@@ -332,124 +322,9 @@ export function imprimirContrato(html: string) {
   }, 300);
 }
 
-/* ───────── Campo de assinatura (desenhar na tela) ───────── */
-
-function Assinar({
-  titulo,
-  valor,
-  onChange,
-  bloqueado,
-  aviso,
-}: {
-  titulo: string;
-  valor: string;
-  onChange: (img: string) => void;
-  bloqueado?: boolean;
-  aviso?: string;
-}) {
-  const ref = useRef<HTMLCanvasElement>(null);
-  const desenhando = useRef(false);
-
-  const pos = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
-  };
-  const ctx = () => {
-    const c = ref.current?.getContext("2d");
-    if (c) {
-      c.lineWidth = 2;
-      c.lineCap = "round";
-      c.strokeStyle = "#1a1a2e";
-    }
-    return c;
-  };
-
-  const limpar = () => {
-    const c = ref.current;
-    if (c) c.getContext("2d")?.clearRect(0, 0, c.width, c.height);
-    onChange("");
-  };
-
-  return (
-    <div
-      style={{
-        border: "1px solid #e5e5ef",
-        borderRadius: 10,
-        padding: 12,
-        opacity: bloqueado ? 0.5 : 1,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          fontSize: 12,
-          color: "#555",
-          marginBottom: 6,
-        }}
-      >
-        <span>{titulo}</span>
-        {valor && !bloqueado && (
-          <button
-            type="button"
-            onClick={limpar}
-            style={{
-              border: "none",
-              background: "none",
-              color: "#6c5ce7",
-              cursor: "pointer",
-              fontSize: 12,
-            }}
-          >
-            Limpar
-          </button>
-        )}
-      </div>
-      <canvas
-        ref={ref}
-        width={420}
-        height={110}
-        aria-label={`Assinatura: ${titulo}`}
-        style={{
-          width: "100%",
-          height: 110,
-          background: "#f1f2fc",
-          borderRadius: 8,
-          touchAction: "none",
-          cursor: bloqueado ? "not-allowed" : "crosshair",
-        }}
-        onPointerDown={(e) => {
-          if (bloqueado) return;
-          desenhando.current = true;
-          e.currentTarget.setPointerCapture(e.pointerId);
-          const { x, y } = pos(e);
-          const c = ctx();
-          c?.beginPath();
-          c?.moveTo(x, y);
-        }}
-        onPointerMove={(e) => {
-          if (!desenhando.current) return;
-          const { x, y } = pos(e);
-          const c = ctx();
-          c?.lineTo(x, y);
-          c?.stroke();
-        }}
-        onPointerUp={() => {
-          if (!desenhando.current) return;
-          desenhando.current = false;
-          if (ref.current) onChange(ref.current.toDataURL("image/png"));
-        }}
-      />
-      {aviso && (
-        <div style={{ color: "#999", fontSize: 11, marginTop: 6 }}>{aviso}</div>
-      )}
-    </div>
-  );
-}
-
 /* ───────── Componente principal ───────── */
 
-const passos = ["Dados", "Contrato", "Assinaturas", "Envio"];
+const passos = ["Dados", "Contrato", "Envio"];
 
 function Campo({
   rotulo,
@@ -499,13 +374,6 @@ function NovoContrato({ imovel, onClose, onConcluir }: Props) {
   const [passo, setPasso] = useState(0);
   const [d, setD] = useState<Dados>({ ...vazio, imovel: imovel ?? "" });
   const [erro, setErro] = useState("");
-  const [ass, setAss] = useState<Assinaturas>({
-    locatario: "",
-    fiador: "",
-    conjuge: "",
-    fundacao: "",
-  });
-  const [firmas, setFirmas] = useState(false);
   const [enviarLoc, setEnviarLoc] = useState(true);
   const [enviarFia, setEnviarFia] = useState(true);
 
@@ -526,7 +394,7 @@ function NovoContrato({ imovel, onClose, onConcluir }: Props) {
     props: { placeholder?: string; type?: string } = {},
   ) => <Input value={d[k]} onChange={set(k)} style={largo} {...props} />;
 
-  const html = contratoHTML(d, ass);
+  const html = contratoHTML(d);
 
   const validarDados = () => {
     const obrig: [keyof Dados, string][] = [
@@ -571,19 +439,6 @@ function NovoContrato({ imovel, onClose, onConcluir }: Props) {
       const e = validarDados();
       if (e) return setErro(e);
     }
-    if (passo === 2) {
-      if (
-        !ass.locatario ||
-        !ass.fiador ||
-        (temConjuge && !ass.conjuge) ||
-        !ass.fundacao
-      )
-        return setErro("Faltam assinaturas.");
-      if (!firmas)
-        return setErro(
-          "Confirme que as firmas foram reconhecidas em cartório.",
-        );
-    }
     setErro("");
     setPasso(passo + 1);
   };
@@ -596,7 +451,7 @@ function NovoContrato({ imovel, onClose, onConcluir }: Props) {
   const mailto = `mailto:${destinos.join(",")}?subject=${encodeURIComponent(
     `Contrato de locação – ${d.imovel}`,
   )}&body=${encodeURIComponent(
-    `Olá! Segue o contrato de locação do imóvel ${d.imovel}, já assinado. O PDF está em anexo.\n\nFundação Manuel Cruz`,
+    `Olá! Segue o contrato de locação do imóvel ${d.imovel}, já gerado. O PDF está em anexo.\n\nFundação Manuel Cruz`,
   )}`;
 
   const concluir = () => {
@@ -611,9 +466,6 @@ function NovoContrato({ imovel, onClose, onConcluir }: Props) {
       enviadoPara: destinos,
     });
   };
-
-  const faltaAlguem =
-    !ass.locatario || !ass.fiador || (temConjuge && !ass.conjuge);
 
   return (
     <div
@@ -762,95 +614,45 @@ function NovoContrato({ imovel, onClose, onConcluir }: Props) {
 
         {passo === 2 && (
           <div style={{ display: "grid", gap: 12 }}>
-            <Assinar
-              titulo={`Locatário — ${d.locatario}`}
-              valor={ass.locatario}
-              onChange={(img) => setAss({ ...ass, locatario: img })}
-            />
-            <Assinar
-              titulo={`Fiador — ${d.fiador}`}
-              valor={ass.fiador}
-              onChange={(img) => setAss({ ...ass, fiador: img })}
-            />
-            {temConjuge && (
-              <Assinar
-                titulo={`Cônjuge do fiador — ${d.conjuge}`}
-                valor={ass.conjuge}
-                onChange={(img) => setAss({ ...ass, conjuge: img })}
-              />
-            )}
-            <Assinar
-              titulo="Locadora — Fundação Manuel Cruz"
-              valor={ass.fundacao}
-              onChange={(img) => setAss({ ...ass, fundacao: img })}
-              bloqueado={faltaAlguem}
-              aviso={
-                faltaAlguem
-                  ? "A Fundação assina por último, depois de todos os outros."
-                  : undefined
-              }
-            />
-            <label
-              style={{ fontSize: 12, color: "#555", display: "flex", gap: 8 }}
-            >
-              <input
-                type="checkbox"
-                checked={firmas}
-                onChange={(e) => {
-                  setFirmas(e.target.checked);
-                  setErro("");
-                }}
-              />
-              Firma do locatário e do fiador reconhecida em cartório
-            </label>
-            <div style={{ fontSize: 11, color: "#999" }}>
-              As duas testemunhas assinam no papel, nas linhas que ficam no fim
-              do PDF.
-            </div>
-          </div>
-        )}
-
-        {passo === 3 && (
-          <div
-            style={{ display: "grid", gap: 12, fontSize: 13, color: "#555" }}
-          >
-            <div>Contrato assinado. Para quem você quer enviar?</div>
-            <label style={{ display: "flex", gap: 8 }}>
+            <p style={{ fontSize: 13, color: "#555", margin: 0 }}>
+              O contrato está pronto. Selecione abaixo para quem deseja enviar o documento por e-mail:
+            </p>
+            <label style={{ fontSize: 13, display: "flex", gap: 8, alignItems: "center" }}>
               <input
                 type="checkbox"
                 checked={enviarLoc}
                 onChange={(e) => setEnviarLoc(e.target.checked)}
               />
-              {d.locatario} ({d.emailLocatario})
+              Enviar cópia para o locatário ({d.emailLocatario || "e-mail não informado"})
             </label>
-            <label style={{ display: "flex", gap: 8 }}>
+            <label style={{ fontSize: 13, display: "flex", gap: 8, alignItems: "center" }}>
               <input
                 type="checkbox"
                 checked={enviarFia}
                 onChange={(e) => setEnviarFia(e.target.checked)}
               />
-              {d.fiador} ({d.emailFiador})
+              Enviar cópia para o fiador ({d.emailFiador || "e-mail não informado"})
             </label>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => imprimirContrato(html)}
-              >
-                Baixar PDF
-              </Button>
-              {destinos.length > 0 && (
-                <a href={mailto} style={{ textDecoration: "none" }}>
-                  <Button type="button" variant="secondary">
-                    Abrir e-mail
-                  </Button>
+
+            {destinos.length > 0 && (
+              <div style={{ marginTop: 8 }}>
+                <a
+                  href={mailto}
+                  style={{
+                    display: "inline-block",
+                    padding: "8px 16px",
+                    background: "#6c5ce7",
+                    color: "#fff",
+                    borderRadius: 6,
+                    textDecoration: "none",
+                    fontSize: 13,
+                    fontWeight: 600,
+                  }}
+                >
+                  Abrir programa de e-mail com os anexos
                 </a>
-              )}
-            </div>
-            <div style={{ fontSize: 11, color: "#999" }}>
-              Por enquanto o e-mail abre no seu programa de e-mail (anexe o PDF
-              baixado). O envio automático entra na integração com o back-end.
-            </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -865,22 +667,32 @@ function NovoContrato({ imovel, onClose, onConcluir }: Props) {
             display: "flex",
             justifyContent: "space-between",
             marginTop: 20,
+            paddingTop: 12,
+            borderTop: "1px solid #e5e5ef",
           }}
         >
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => (passo === 0 ? onClose() : setPasso(passo - 1))}
-          >
-            {passo === 0 ? "Cancelar" : "Voltar"}
-          </Button>
-          {passo < 3 ? (
+          {passo > 0 ? (
+         <Button
+           type="button"
+           variant="secondary"
+           onClick={() => {
+             setErro("");
+             setPasso(passo - 1);
+           }}
+         >
+           Voltar
+         </Button>
+       ) : (
+         <div />
+       )}
+
+          {passo < passos.length - 1 ? (
             <Button type="button" onClick={avancar}>
-              Continuar
+              Avançar
             </Button>
           ) : (
             <Button type="button" onClick={concluir}>
-              Concluir contrato
+              Concluir
             </Button>
           )}
         </div>
