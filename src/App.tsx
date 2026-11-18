@@ -1,4 +1,6 @@
 import { Routes, Route } from "react-router-dom";
+import CadastroLocatario from "./pages/CadastroLocatario";
+import CadastroImoveis from "./pages/CadastroImoveis";
 import Splash from "./components/Splash";
 import Layout from "./components/layout";
 import Login from "./pages/Login";
@@ -22,6 +24,8 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/cadastro" element={<Cadastro />} />
       <Route element={<Layout />}>
+        <Route path="/locatarios/novo" element={<CadastroLocatario />} />
+        <Route path="/imoveis/novo" element={<CadastroImoveis />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/imoveis" element={<Imoveis />} />
         <Route path="/financeiro" element={<Financeiro />} />

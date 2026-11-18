@@ -1,317 +1,511 @@
-import { useState } from "react";
-import type { FormEvent } from "react";
-import { Link } from "react-router-dom";
-import { imoveisMock } from "../mocks/imoveisMock";
-import Button from "../components/Button";
-import Input from "../components/Input";
-import Select from "../components/Select";
-import CadastrarLocatario from "../components/locatario";
-import type { LocacaoConcluida } from "../components/locatario";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-type ImovelItem = (typeof imoveisMock.imoveis)[number];
-
-const statusCores: Record<string, string> = {
-  Ocupado: "#e4e0fb",
-  "Vence em breve": "#c9c4f7",
-  Vago: "#e4e0fb",
+type ImovelItem = {
+  id: string;
+  imovel: string;
+  locatario: string;
+  contrato: string;
+  status: "Alugado" | "Vence em breve" | "Vago";
 };
 
-const statusOpcoes = ["Ocupado", "Vence em breve", "Vago"];
+type Props = {
+  onNovoLocatario?: () => void;
+  onNovoImovel?: () => void;
+  onGerarContrato?: (imovel?: string) => void;
+  onVerContrato?: (item: ImovelItem) => void;
+};
 
-function Imoveis() {
-  const [imoveis, setImoveis] = useState<ImovelItem[]>(imoveisMock.imoveis);
+const DADOS_INICIAIS: ImovelItem[] = [
+  {
+    id: "1",
+    imovel: "Rua das Palmeiras, 45",
+    locatario: "M. Andrade",
+    contrato: "até 03/2027",
+    status: "Alugado",
+  },
+  {
+    id: "2",
+    imovel: "Av. Central, 902",
+    locatario: "Padaria Bom Pão",
+    contrato: "até 11/2026",
+    status: "Vence em breve",
+  },
+  {
+    id: "3",
+    imovel: "Rua do Sol, 12",
+    locatario: "Carlos Menezes",
+    contrato: "até 06/2027",
+    status: "Alugado",
+  },
+  {
+    id: "4",
+    imovel: "Travessa Nova, 8",
+    locatario: "—",
+    contrato: "—",
+    status: "Vago",
+  },
+];
+
+export default function ImoveisLocatarios({
+  onNovoLocatario,
+  onNovoImovel,
+  onGerarContrato,
+  onVerContrato,
+}: Props) {
+  const navigate = useNavigate();
+  const [abaAtiva, setAbaAtiva] = useState<"imoveis" | "locatarios">("imoveis");
   const [busca, setBusca] = useState("");
-  const [statusFiltro, setStatusFiltro] = useState("");
+  const [filtroStatus, setFiltroStatus] = useState("Todos os status");
 
-  const [modalAberto, setModalAberto] = useState(false);
-  const [novoEndereco, setNovoEndereco] = useState("");
-  const [erro, setErro] = useState("");
-
-  const [imovelAlvo, setImovelAlvo] = useState<ImovelItem | null>(null);
-
-  const imoveisFiltrados = imoveis.filter((item) => {
-    const buscaOk =
+  const registrosFiltrados = DADOS_INICIAIS.filter((item) => {
+    const bateBusca =
       item.imovel.toLowerCase().includes(busca.toLowerCase()) ||
       item.locatario.toLowerCase().includes(busca.toLowerCase());
-    const statusOk = statusFiltro === "" || item.status === statusFiltro;
-    return buscaOk && statusOk;
+    const bateStatus =
+      filtroStatus === "Todos os status" || item.status === filtroStatus;
+    return bateBusca && bateStatus;
   });
 
-  const abrirModal = () => {
-    setNovoEndereco("");
-    setErro("");
-    setModalAberto(true);
-  };
-
-  const fecharModal = () => {
-    setModalAberto(false);
-    setErro("");
-  };
-
-  const cadastrarImovel = (e: FormEvent) => {
-    e.preventDefault();
-    const endereco = novoEndereco.trim();
-
-    if (!endereco) {
-      setErro("Informe o endereço do imóvel.");
-      return;
-    }
-    if (
-      imoveis.some((i) => i.imovel.toLowerCase() === endereco.toLowerCase())
-    ) {
-      setErro("Esse imóvel já está cadastrado.");
-      return;
-    }
-
-    // Semana 4: trocar por um POST com Axios e só adicionar na lista depois da resposta.
-    const novo = {
-      imovel: endereco,
-      locatario: "—",
-      contrato: "—",
-      status: "Vago",
-    } as ImovelItem;
-
-    setImoveis([novo, ...imoveis]);
-    setBusca("");
-    setStatusFiltro("");
-    fecharModal();
-  };
-
-  const concluirLocacao = (dados: LocacaoConcluida) => {
-    if (!imovelAlvo) return;
-
-    // Semana 4: trocar por um POST com Axios (proposta, locatário, fiador, contrato) e atualizar a lista com a resposta.
-    setImoveis((lista) =>
-      lista.map((i) =>
-        i === imovelAlvo
-          ? ({
-              ...i,
-              locatario: dados.locatario,
-              contrato: `Desde ${dados.dataEntrega}`,
-              status: "Ocupado",
-            } as ImovelItem)
-          : i,
-      ),
-    );
-    setImovelAlvo(null);
-  };
-
   return (
-    <main style={{ padding: "28px 36px" }}>
+    <div
+      style={{
+        width: "100%",
+        background: "#f8f9fc",
+        padding: "24px 36px",
+        fontFamily: "Nunito, sans-serif",
+        color: "#1a1a2e",
+        boxSizing: "border-box",
+      }}
+    >
+      {/* Cabeçalho */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start",
-          marginBottom: 24,
+          marginBottom: 18,
         }}
       >
         <div>
-          <h1 style={{ fontSize: 20, marginBottom: 2, color: "#1a1a2e" }}>
-            Imóveis e clientes
+          <h1 style={{ fontSize: 22, margin: 0, color: "#111" }}>
+            Imóveis e locatários
           </h1>
-          <p style={{ color: "#999", fontSize: 12 }}>
-            {imoveis.length} imóveis cadastrados
-          </p>
+          <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+            124 imóveis cadastrados
+          </div>
         </div>
-        <Button variant="primary" onClick={abrirModal}>
-          + Novo imóvel
-        </Button>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            type="button"
+            onClick={() => navigate("/locatarios/novo")}
+            style={{
+              background: "#fff",
+              border: "1px solid #dcdce6",
+              padding: "8px 16px",
+              borderRadius: 6,
+              fontSize: 13,
+              color: "#1d4ed8",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+            > 
+            + Novo locatário
+            </button>
+          <button
+            type="button"
+            onClick={() => navigate("/imoveis/novo")}
+            style={{
+               background: "#1d4ed8",
+                border: "none",
+                padding: "8px 16px",
+                borderRadius: 6,
+                fontSize: 13,
+                color: "#fff",
+                fontWeight: 600,
+                cursor: "pointer",
+            }}
+          >
+              + Novo imóvel
+          </button>
+        </div>
       </div>
 
+      {/* Barra de Abas e Ação Rápida */}
       <div
-        style={{ border: "1px solid #e5e5ef", borderRadius: 10, padding: 20 }}
+        style={{
+          background: "#eef2f9",
+          borderRadius: 10,
+          padding: "8px 12px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 20,
+        }}
       >
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <button
+            type="button"
+            onClick={() => setAbaAtiva("imoveis")}
+            style={{
+              background: abaAtiva === "imoveis" ? "#1d4ed8" : "#fff",
+              color: abaAtiva === "imoveis" ? "#fff" : "#333",
+              border: abaAtiva === "imoveis" ? "none" : "1px solid #dcdce6",
+              padding: "7px 20px",
+              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Imóveis
+          </button>
+          <button
+            type="button"
+            onClick={() => setAbaAtiva("locatarios")}
+            style={{
+              background: abaAtiva === "locatarios" ? "#1d4ed8" : "#fff",
+              color: abaAtiva === "locatarios" ? "#fff" : "#333",
+              border: abaAtiva === "locatarios" ? "none" : "1px solid #dcdce6",
+              padding: "7px 20px",
+              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Locatários
+          </button>
+          <span style={{ fontSize: 12, color: "#666", marginLeft: 8 }}>
+            Cadastros separados, informações conectadas
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onGerarContrato?.()}
+          style={{
+            background: "#fff",
+            border: "1px solid #dcdce6",
+            padding: "7px 24px",
+            borderRadius: 6,
+            fontSize: 12,
+            fontWeight: 600,
+            color: "#333",
+            cursor: "pointer",
+          }}
+        >
+          Gerar contrato
+        </button>
+      </div>
+
+      {/* Card da Tabela de Registros */}
+      <div
+        style={{
+          background: "#fff",
+          border: "1px solid #e5e5ef",
+          borderRadius: 12,
+          padding: 20,
+          marginBottom: 24,
+        }}
+      >
+        {/* Barra de Busca e Filtro */}
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
+            alignItems: "center",
             marginBottom: 16,
           }}
         >
-          <Input
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            placeholder="Nome ou endereço"
-            style={{ width: 260 }}
-          />
-          <Select
-            value={statusFiltro}
-            onChange={(e) => setStatusFiltro(e.target.value)}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              border: "1px solid #dcdce6",
+              borderRadius: 20,
+              padding: "6px 14px",
+              width: 260,
+              gap: 8,
+            }}
           >
-            <option value="">Filtrar por status</option>
-            {statusOpcoes.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </Select>
+            <span style={{ color: "#888", fontSize: 13 }}>☰</span>
+            <input
+              type="text"
+              placeholder="Buscar imóvel"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              style={{
+                border: "none",
+                outline: "none",
+                fontSize: 12,
+                flex: 1,
+                fontFamily: "Nunito, sans-serif",
+              }}
+            />
+            <span style={{ color: "#888", fontSize: 13 }}>🔍</span>
+          </div>
+
+          <select
+            value={filtroStatus}
+            onChange={(e) => setFiltroStatus(e.target.value)}
+            style={{
+              padding: "7px 14px",
+              borderRadius: 6,
+              border: "1px solid #dcdce6",
+              fontSize: 12,
+              color: "#333",
+              background: "#fff",
+              fontFamily: "Nunito, sans-serif",
+              cursor: "pointer",
+            }}
+          >
+            <option value="Todos os status">Todos os status</option>
+            <option value="Alugado">Alugado</option>
+            <option value="Vence em breve">Vence em breve</option>
+            <option value="Vago">Vago</option>
+          </select>
         </div>
 
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        {/* Tabela */}
+        <table
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            fontSize: 13,
+            textAlign: "left",
+          }}
+        >
           <thead>
-            <tr style={{ color: "#999", fontSize: 12, textAlign: "left" }}>
-              <th style={{ fontWeight: 400, paddingBottom: 10 }}>Imóvel</th>
-              <th style={{ fontWeight: 400, paddingBottom: 10 }}>Locatário</th>
-              <th style={{ fontWeight: 400, paddingBottom: 10 }}>Contrato</th>
-              <th style={{ fontWeight: 400, paddingBottom: 10 }}>Status</th>
-              <th style={{ fontWeight: 400, paddingBottom: 10 }}></th>
+            <tr style={{ borderBottom: "1px solid #ececf4", color: "#555" }}>
+              <th style={thStyle}>Imóvel</th>
+              <th style={thStyle}>Locatário</th>
+              <th style={thStyle}>Contrato</th>
+              <th style={thStyle}>Status</th>
+              <th style={thStyle}>Ações</th>
             </tr>
           </thead>
           <tbody>
-            {imoveisFiltrados.map((item, i) => (
+            {registrosFiltrados.map((item) => (
               <tr
-                key={i}
-                style={{
-                  fontSize: 13,
-                  color: "#999",
-                  borderTop: "1px solid #f0f0f5",
-                }}
+                key={item.id}
+                style={{ borderBottom: "1px solid #f1f1f8", color: "#222" }}
               >
-                <td style={{ padding: "10px 0" }}>{item.imovel}</td>
-                <td style={{ padding: "10px 0" }}>{item.locatario}</td>
-                <td style={{ padding: "10px 0" }}>{item.contrato}</td>
-                <td style={{ padding: "10px 0" }}>
-                  <span
-                    style={{
-                      background: statusCores[item.status],
-                      color: "rgba(14, 26, 194, 0.5)",
-                      fontWeight: 600,
-                      borderRadius: 20,
-                      padding: "4px 12px",
-                      fontSize: 11,
-                    }}
-                  >
-                    {item.status}
-                  </span>
+                <td style={tdStyle}>{item.imovel}</td>
+                <td style={tdStyle}>{item.locatario}</td>
+                <td style={tdStyle}>{item.contrato}</td>
+                <td style={tdStyle}>
+                  <StatusBadge status={item.status} />
                 </td>
-                <td style={{ padding: "10px 0" }}>
+                <td style={tdStyle}>
                   {item.status === "Vago" ? (
-                    <Button
-                      variant="secondary"
-                      onClick={() => setImovelAlvo(item)}
+                    <button
+                      type="button"
+                      onClick={onNovoLocatario}
+                      style={btnAcaoStyle}
                     >
                       Cadastrar locatário
-                    </Button>
-                  ) : item.contratoId ? (
-                    <Link
-                      to={`/contratos/${item.contratoId}`}
-                      style={{ textDecoration: "none" }}
-                    >
-                      <Button variant="secondary">Ver contrato</Button>
-                    </Link>
+                    </button>
                   ) : (
-                    <Button variant="secondary" disabled>
-                      Contrato em andamento
-                    </Button>
+                    <button
+                      type="button"
+                      onClick={() => onVerContrato?.(item)}
+                      style={btnAcaoStyle}
+                    >
+                      Ver contrato
+                    </button>
                   )}
                 </td>
               </tr>
             ))}
-            {imoveisFiltrados.length === 0 && (
-              <tr>
-                <td
-                  colSpan={5}
-                  style={{
-                    padding: "20px 0",
-                    textAlign: "center",
-                    color: "#bbb",
-                    fontSize: 13,
-                  }}
-                >
-                  Nenhum imóvel encontrado
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
+
+        <div style={{ fontSize: 11, color: "#777", marginTop: 14 }}>
+          {registrosFiltrados.length} registros exibidos • 124 imóveis
+          cadastrados
+        </div>
       </div>
 
-      {modalAberto && (
-        <div
-          onClick={fecharModal}
+      {/* Seção Inferior: Cadastros e contratos */}
+      <div>
+        <h2
           style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.35)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
+            fontSize: 15,
+            fontWeight: 700,
+            color: "#1a1a2e",
+            marginBottom: 14,
           }}
         >
-          <form
-            onClick={(e) => e.stopPropagation()}
-            onSubmit={cadastrarImovel}
-            noValidate
-            style={{
-              background: "#fff",
-              borderRadius: 12,
-              padding: 24,
-              width: 400,
-              maxWidth: "90%",
-            }}
-          >
-            <h2 style={{ fontSize: 16, margin: 0, color: "#1a1a2e" }}>
-              Novo imóvel
-            </h2>
-            <p style={{ color: "#999", fontSize: 12, margin: "2px 0 18px" }}>
-              Cadastre o endereço. O locatário e o contrato você adiciona
-              depois.
-            </p>
+          Cadastros e contratos
+        </h2>
 
-            <label
-              style={{
-                display: "block",
-                fontSize: 12,
-                color: "#555",
-                marginBottom: 6,
-              }}
-            >
-              Endereço do imóvel
-            </label>
-            <Input
-              autoFocus
-              value={novoEndereco}
-              onChange={(e) => {
-                setNovoEndereco(e.target.value);
-                setErro("");
-              }}
-              placeholder="Ex.: Rua das Palmeiras, 45"
-              style={{ width: "100%", boxSizing: "border-box" }}
-            />
-            {erro && (
-              <div style={{ color: "#d63031", fontSize: 12, marginTop: 6 }}>
-                {erro}
-              </div>
-            )}
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 10,
-                marginTop: 20,
-              }}
-            >
-              <Button type="button" variant="secondary" onClick={fecharModal}>
-                Cancelar
-              </Button>
-              <Button type="submit">Cadastrar imóvel</Button>
-            </div>
-          </form>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: 16,
+          }}
+        >
+          <CardAtalho
+            numero="01"
+            titulo="Locatários"
+            descricao="Dados pessoais, contato e documentos para identificar e formalizar a locação."
+            textoBotao="Cadastrar locatário"
+            onClick={onNovoLocatario}
+          />
+          <CardAtalho
+            numero="02"
+            titulo="Imóveis"
+            descricao="Endereço, características e valores de cada imóvel disponível para locação."
+            textoBotao="Cadastrar imóvel"
+            onClick={onNovoImovel}
+          />
+          <CardAtalho
+            numero="03"
+            titulo="Contratos"
+            descricao="Vincule cliente e imóvel para preencher automaticamente os dados da locação."
+            textoBotao="Gerar contrato"
+            destaque
+            onClick={() => onGerarContrato?.()}
+          />
         </div>
-      )}
-
-      {imovelAlvo && (
-        <CadastrarLocatario
-          imovel={imovelAlvo.imovel}
-          onClose={() => setImovelAlvo(null)}
-          onConcluir={concluirLocacao}
-        />
-      )}
-    </main>
+      </div>
+    </div>
   );
 }
 
-export default Imoveis;
+/* ───────── Componentes Auxiliares ───────── */
+
+function StatusBadge({ status }: { status: ImovelItem["status"] }) {
+  const estilos: Record<
+    ImovelItem["status"],
+    { bg: string; color: string }
+  > = {
+    Alugado: { bg: "#e6effb", color: "#1d4ed8" },
+    "Vence em breve": { bg: "#e8f0fe", color: "#2563eb" },
+    Vago: { bg: "#eceef2", color: "#555" },
+  };
+
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        background: estilos[status].bg,
+        color: estilos[status].color,
+        padding: "4px 12px",
+        borderRadius: 6,
+        fontSize: 12,
+        fontWeight: 600,
+        minWidth: 110,
+      }}
+    >
+      {status}
+    </span>
+  );
+}
+
+function CardAtalho({
+  numero,
+  titulo,
+  descricao,
+  textoBotao,
+  destaque,
+  onClick,
+}: {
+  numero: string;
+  titulo: string;
+  descricao: string;
+  textoBotao: string;
+  destaque?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <div
+      style={{
+        background: "#fff",
+        border: "1px solid #e5e5ef",
+        borderRadius: 12,
+        padding: 20,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+      }}
+    >
+      <div>
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color: "#1d4ed8",
+            marginBottom: 4,
+          }}
+        >
+          {numero}
+        </div>
+        <div
+          style={{
+            fontSize: 15,
+            fontWeight: 700,
+            color: "#111",
+            marginBottom: 6,
+          }}
+        >
+          {titulo}
+        </div>
+        <div
+          style={{
+            fontSize: 12,
+            color: "#666",
+            lineHeight: 1.45,
+            marginBottom: 18,
+          }}
+        >
+          {descricao}
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={onClick}
+        style={{
+          width: "100%",
+          padding: "9px 14px",
+          borderRadius: 6,
+          fontSize: 12,
+          fontWeight: 600,
+          cursor: "pointer",
+          background: destaque ? "#1d4ed8" : "#fff",
+          color: destaque ? "#fff" : "#1d4ed8",
+          border: destaque ? "none" : "1px solid #dcdce6",
+        }}
+      >
+        {textoBotao}
+      </button>
+    </div>
+  );
+}
+
+const thStyle: React.CSSProperties = {
+  padding: "10px 8px",
+  fontWeight: 600,
+  fontSize: 12,
+};
+
+const tdStyle: React.CSSProperties = {
+  padding: "11px 8px",
+  verticalAlign: "middle",
+};
+
+const btnAcaoStyle: React.CSSProperties = {
+  background: "#fff",
+  border: "1px solid #dcdce6",
+  borderRadius: 6,
+  padding: "5px 14px",
+  fontSize: 12,
+  fontWeight: 600,
+  color: "#1d4ed8",
+  cursor: "pointer",
+  minWidth: 145,
+};

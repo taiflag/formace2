@@ -1,101 +1,203 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import Button from "../components/Button";
-import NovoContrato from "../components/NovoContrato";
-import type { ContratoCriado } from "../components/NovoContrato";
-import { contratosMock } from "../mocks/contratosMock";
-import {
-  adicionarContrato,
-  useContratosCriados,
-} from "../store/contratosStore";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-const cardStyle = {
-  textDecoration: "none",
-  display: "block",
-  width: 170,
-  padding: "18px 12px",
-  textAlign: "center" as const,
-  background: "#fff",
-  border: "1px solid #ecebf7",
-  borderRadius: 10,
-  boxShadow: "0 2px 8px rgba(108, 92, 231, 0.12)",
+type ContratoItem = {
+  id: string;
+  imovel: string;
+  vencimento: string;
 };
 
-function Contratos() {
-  const criados = useContratosCriados();
-  const [criando, setCriando] = useState(false);
+type Props = {
+  onNovoContrato?: () => void;
+  onVerContrato?: (id: string) => void;
+};
 
-  const concluir = (c: ContratoCriado) => {
-    // Semana 4: trocar por um POST com Axios (contrato + PDF) e usar a resposta.
-    adicionarContrato(c);
-    setCriando(false);
+const CONTRATOS_INICIAIS: ContratoItem[] = [
+  { id: "1", imovel: "R. Palmeiras, 45", vencimento: "03/2027" },
+  { id: "2", imovel: "Av. Central, 902", vencimento: "11/2026" },
+  { id: "3", imovel: "Rua do Sol, 12", vencimento: "06/2027" },
+  { id: "4", imovel: "Alameda Verde, 220", vencimento: "01/2027" },
+  { id: "5", imovel: "R. Palmeiras, 45", vencimento: "03/2027" },
+];
+
+export default function Contratos({ onNovoContrato, onVerContrato }: Props) {
+  const navigate = useNavigate();
+  const [busca, setBusca] = useState("");
+
+  const contratosFiltrados = CONTRATOS_INICIAIS.filter((item) =>
+    item.imovel.toLowerCase().includes(busca.toLowerCase())
+  );
+
+  const handleNovo = () => {
+    if (onNovoContrato) {
+      onNovoContrato();
+    } else {
+      navigate("/contratos/novo"); // Ajuste a rota conforme seu App.tsx
+    }
   };
 
-  // criados primeiro, depois os do mock; todos abrem em /contratos/:id
-  const todos = [
-    ...criados.map((c) => ({
-      id: c.id,
-      locatario: c.locatario,
-      vence: c.vence,
-    })),
-    ...contratosMock,
-  ];
+  const handleVer = (id: string) => {
+    if (onVerContrato) {
+      onVerContrato(id);
+    } else {
+      navigate(`/contratos/${id}`);
+    }
+  };
 
   return (
-    <main style={{ padding: "28px 36px", fontFamily: "'Nunito', sans-serif" }}>
+    <div
+      style={{
+        width: "100%",
+        background: "#f8f9fc",
+        padding: "24px 36px",
+        fontFamily: "Nunito, sans-serif",
+        color: "#1a1a2e",
+        boxSizing: "border-box",
+      }}
+    >
+      {/* ───────── CABEÇALHO SUPERIOR ───────── */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start",
-          marginBottom: 24,
+          marginBottom: 20,
         }}
       >
         <div>
-          <h1 style={{ fontSize: 20, marginBottom: 2, color: "#1a1a2e" }}>
-            Contratos
-          </h1>
-          <p style={{ color: "#999", fontSize: 12 }}>
+          <h1 style={{ fontSize: 22, margin: 0, color: "#111" }}>Contratos</h1>
+          <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
             Documentos digitalizados, sem arquivamento físico
-          </p>
+          </div>
         </div>
-        <Button variant="primary" onClick={() => setCriando(true)}>
+
+        <button
+          type="button"
+          onClick={() => navigate("/contratos/:id")}
+          style={{
+            background: "#1d4ed8",
+            border: "none",
+            padding: "9px 18px",
+            borderRadius: 6,
+            fontSize: 13,
+            color: "#fff",
+            fontWeight: 600,
+            cursor: "pointer",
+            fontFamily: "Nunito, sans-serif",
+          }}
+         >
           + Novo contrato PDF
-        </Button>
+        </button>
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
-        {todos.map((c) => (
-          <Link key={c.id} to={`/contratos/${c.id}`} style={cardStyle}>
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: "50%",
-                margin: "0 auto 10px",
-                background: "linear-gradient(90deg, #6c5ce7 50%, #cfcaf5 50%)",
-              }}
-            />
-            <p
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: "#1a1a2e",
-                marginBottom: 4,
-              }}
-            >
-              {c.locatario}
-            </p>
-            <p style={{ fontSize: 11, color: "#999" }}>vence {c.vence}</p>
-          </Link>
-        ))}
-      </div>
+      {/* ───────── CARD PRINCIPAL DE CONTRATOS ───────── */}
+      <div
+        style={{
+          background: "#fff",
+          border: "1px solid #e5e5ef",
+          borderRadius: 12,
+          padding: 24,
+        }}
+      >
+        {/* Barra de Busca */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            border: "1px solid #dcdce6",
+            borderRadius: 20,
+            padding: "6px 14px",
+            width: 300,
+            gap: 8,
+            marginBottom: 20,
+          }}
+        >
+          <span style={{ color: "#888", fontSize: 13 }}>☰</span>
+          <input
+            type="text"
+            placeholder="Buscar contrato"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            style={{
+              border: "none",
+              outline: "none",
+              fontSize: 12,
+              flex: 1,
+              fontFamily: "Nunito, sans-serif",
+              background: "transparent",
+            }}
+          />
+          <span style={{ color: "#888", fontSize: 13 }}>🔍</span>
+        </div>
 
-      {criando && (
-        <NovoContrato onClose={() => setCriando(false)} onConcluir={concluir} />
-      )}
-    </main>
+        {/* Tabela de Contratos */}
+        <table
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            fontSize: 13,
+            textAlign: "left",
+          }}
+        >
+          <thead>
+            <tr style={{ borderBottom: "1px solid #ececf4", color: "#555" }}>
+              <th style={thStyle}>Imóvel</th>
+              <th style={thStyle}>Vencimento</th>
+              <th style={{ ...thStyle, textAlign: "right" }}>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {contratosFiltrados.map((item) => (
+              <tr
+                key={item.id + "-" + Math.random()}
+                style={{ borderBottom: "1px solid #f1f1f8", color: "#222" }}
+              >
+                <td style={tdStyle}>{item.imovel}</td>
+                <td style={{ ...tdStyle, color: "#1d4ed8", fontWeight: 600 }}>
+                  {item.vencimento}
+                </td>
+                <td style={{ ...tdStyle, textAlign: "right" }}>
+                  <button
+                    type="button"
+                    onClick={() => handleVer(item.id)}
+                    style={{
+                      background: "#fff",
+                      border: "1px solid #dcdce6",
+                      borderRadius: 6,
+                      padding: "6px 16px",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "#1d4ed8",
+                      cursor: "pointer",
+                      fontFamily: "Nunito, sans-serif",
+                    }}
+                  >
+                    Ver contrato
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {/* Rodapé da tabela */}
+        <div style={{ fontSize: 11, color: "#777", marginTop: 16 }}>
+          {contratosFiltrados.length} documentos exibidos • Consulte o imóvel e o vencimento antes de abrir.
+        </div>
+      </div>
+    </div>
   );
 }
 
-export default Contratos;
+/* ───────── Estilos Auxiliares ───────── */
+
+const thStyle: React.CSSProperties = {
+  padding: "10px 8px",
+  fontWeight: 600,
+  fontSize: 12,
+};
+
+const tdStyle: React.CSSProperties = {
+  padding: "12px 8px",
+  verticalAlign: "middle",
+};
