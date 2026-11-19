@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import EsqueciSenha from "./pages/EsqueciSenha";
 import CadastroLocatario from "./pages/CadastroLocatario";
 import CadastroImoveis from "./pages/CadastroImoveis";
 import Splash from "./components/Splash";
@@ -21,6 +22,7 @@ function App() {
         path="/"
         element={<Splash backgroundSrc={fundo} logoSrc={logo} />}
       />
+      <Route path="/esqueci-senha" element={<EsqueciSenha />} />
       <Route path="/login" element={<Login />} />
       <Route path="/cadastro" element={<Cadastro />} />
       <Route element={<Layout />}>
